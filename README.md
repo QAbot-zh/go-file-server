@@ -45,18 +45,81 @@
 
 ## 部署与使用说明
 
-1. **安装 Go 环境**：
-   确保系统安装了 Go 语言环境。
+### Go 文件服务器部署与使用完整教程  
 
-2. **下载项目代码**：
-   克隆或下载本项目代码到本地。
+---
 
-3. **编译与运行**：
-   在项目目录下执行以下命令：
-   ```bash
-   go build
-   ./your_executable_name
-   ```
+#### **简介**  
+本教程指导如何部署一个基于 Go 编写的简易文件服务器，支持文件上传、下载、删除和目录查看功能。服务默认监听 `3456` 端口。
+---
+
+#### **1. 准备 Go 环境**  
+**1.1 安装 Go**  
+- **Ubuntu/Debian**  
+  ```bash
+  sudo apt update
+  sudo apt install golang
+  ```  
+- **其他系统**  
+  参考 [Go 官方安装指南](https://golang.org/doc/install)。  
+
+**1.2 验证安装**  
+```bash
+go version
+# 确保版本 ≥1.18（若版本过低，需手动安装新版）
+```
+
+---
+
+#### **2. 获取项目代码**  
+**2.1 克隆仓库**  
+```bash
+git clone https://github.com/QAbot-zh/go-file-server.git
+cd go-file-server
+```  
+
+**2.2 （备用）直接下载代码**  
+如果未安装 Git，可从仓库主页下载 ZIP 文件：  
+https://github.com/QAbot-zh/go-file-server  
+
+---
+
+#### **3. 编译与运行**  
+**注意：将文件 env.conf 中 accessCodes=code 的 code 改为 ChatGPT-Next-Web 的访问密码**
+
+**3.1 编译项目**  
+在项目根目录执行：  
+```bash
+go build  main.go
+```  
+生成可执行文件 `main`。  
+
+**3.2 启动服务**  
+- **前台运行（调试用）**  
+  ```bash
+  ./main
+  ```  
+- **后台运行（生产环境）**  
+  ```bash
+  nohup ./main > output.log 2>&1 &
+  ```  
+  日志将输出到 `output.log`。  
+
+---
+
+#### **4. 验证服务状态**  
+**4.1 检查进程**  
+```bash
+ps aux | grep main
+# 应看到类似 `/path/to/main` 的进程
+```  
+
+**4.2 测试端口监听**  
+```bash
+netstat -tuln | grep 3456
+# 输出应有 `LISTEN` 状态
+```  
+
    服务器启动后监听默认端口，提供路由服务。
 
 ![image](https://github.com/user-attachments/assets/469144be-fb8b-4216-9da1-57c1a84864ad)

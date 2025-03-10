@@ -86,6 +86,7 @@ https://github.com/QAbot-zh/go-file-server
 
 #### **3. 编译与运行**  
 **3.1 编译项目**  
+将文件 env.conf 中 accessCodes=code 的 code 改为 ChatGPT-Next-Web 的访问密码
 在项目根目录执行：  
 ```bash
 go build  main.go

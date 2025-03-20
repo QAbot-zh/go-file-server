@@ -230,49 +230,67 @@ func handleImport(w http.ResponseWriter, r *http.Request) {
 
 // 获取文件列表
 func handleGetList(w http.ResponseWriter, r *http.Request) {
-        setCORSAndLog(w, r, "GetList")
+    setCORSAndLog(w, r, "GetList")
 
-        if r.Method == http.MethodOptions {
-                w.WriteHeader(http.StatusOK)
-                return
-        }
-        if r.Method != http.MethodGet {
-                jsonError(w, "只允许使用 GET 方法", http.StatusMethodNotAllowed)
-                return
-        }
+    if r.Method == http.MethodOptions {
+        w.WriteHeader(http.StatusOK)
+        return
+    }
+    if r.Method != http.MethodGet {
+        jsonError(w, "只允许使用 GET 方法", http.StatusMethodNotAllowed)
+        return
+    }
 
-        accessCode, collisionString, valid := checkAccess(r)
-        if !valid {
-                jsonError(w, "无效的 accessCode 或 collisionString", http.StatusForbidden)
-                return
-        }
+    accessCode, collisionString, valid := checkAccess(r)
+    if !valid {
+        jsonError(w, "无效的 accessCode 或 collisionString", http.StatusForbidden)
+        return
+    }
 
-        // 获取目录下的文件列表
-        dirPath := getDirectoryPath(collisionString, accessCode)
-        entries, err := os.ReadDir(dirPath)
+    // 获取目录下的文件列表
+    dirPath := getDirectoryPath(collisionString, accessCode)
+    entries, err := os.ReadDir(dirPath)
+    if err != nil {
+        jsonError(w, "读取目录失败", http.StatusInternalServerError)
+        return
+    }
+
+    // 创建包含修改时间的切片
+    type fileWithModTime struct {
+        info FileInfo
+        modTime time.Time
+    }
+    
+    var files []fileWithModTime
+    
+    for _, entry := range entries {
+        if entry.IsDir() {
+            continue
+        }
+        info, err := entry.Info()
         if err != nil {
-                jsonError(w, "读取目录失败", http.StatusInternalServerError)
-                return
+            fmt.Printf("获取文件信息错误 %s: %v\n", entry.Name(), err)
+            continue
         }
+        files = append(files, fileWithModTime{
+            info:    FileInfo{Name: entry.Name(), Size: info.Size()},
+            modTime: info.ModTime(),
+        })
+    }
 
-        fileList := []FileInfo{}
-        for _, entry := range entries {
-                if !entry.IsDir() {
-                        info, err := entry.Info()
-                        if err != nil {
-                                // 记录错误并跳过该文件
-                                fmt.Printf("Error retrieving info for file %s: %v\n", entry.Name(), err)
-                                continue
-                        }
-                        fileList = append(fileList, FileInfo{
-                                Name: entry.Name(),
-                                Size: info.Size(),
-                        })
-                }
-        }
+    // 按修改时间降序排序（新文件在前）
+    sort.Slice(files, func(i, j int) bool {
+        return files[i].modTime.After(files[j].modTime)
+    })
 
-        w.Header().Set("Content-Type", "application/json")
-        json.NewEncoder(w).Encode(fileList)
+    // 提取排序后的文件信息
+    fileList := make([]FileInfo, len(files))
+    for i, f := range files {
+        fileList[i] = f.info
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(fileList)
 }
 
 // 重命名文件处理
